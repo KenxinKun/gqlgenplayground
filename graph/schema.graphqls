@@ -1,0 +1,23 @@
+type Library {
+  books: [Book!]!
+  address: String!
+}
+
+type Book {
+  title: String!
+  author: Author!
+}
+
+type Author {
+  name: String!
+}
+
+type Fractal {
+  level: Int!
+  fractal: Fractal!
+}
+
+type Query {
+  libraries: [Library!]!
+  fractal: Fractal!
+}

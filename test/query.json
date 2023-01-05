@@ -1,0 +1,1 @@
+{"query":"query listLibraries {     libraries {         address         books {             title             author {                 name             }         }     }     fractal {         level         fractal {             level             fractal {                 level                 fractal {                     level                 }             }         }     } }"} 
