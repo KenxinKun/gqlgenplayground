@@ -1,14 +1,17 @@
 type Library {
+  id: String!
   books: [Book!]!
   address: String!
 }
 
 type Book {
+  id: String!
   title: String!
   author: Author!
 }
 
 type Author {
+  id: String!
   name: String!
 }
 
@@ -18,6 +21,6 @@ type Fractal {
 }
 
 type Query {
-  libraries: [Library!]!
+  library(size: Int!): Library!
   fractal: Fractal!
 }

@@ -6,6 +6,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/KenxinKun/gqlgenplayground/graph/model"
 )
@@ -13,7 +14,8 @@ import (
 // Author is the resolver for the author field.
 func (r *bookResolver) Author(ctx context.Context, obj *model.Book) (*model.Author, error) {
 	return &model.Author{
-		Name: "author name from author resolver for book: " + obj.Title,
+		ID:   obj.Author.ID,
+		Name: fmt.Sprint("author-of-", obj.ID),
 	}, nil
 }
 
@@ -26,19 +28,27 @@ func (r *fractalResolver) Fractal(ctx context.Context, obj *model.Fractal) (*mod
 
 // Books is the resolver for the books field.
 func (r *libraryResolver) Books(ctx context.Context, obj *model.Library) ([]*model.Book, error) {
-	return []*model.Book{
-		{
-			Title: "book title from books resolver",
-		},
-	}, nil
+	for i, book := range obj.Books {
+		book.Title = fmt.Sprint("title-", book.ID)
+		book.Author = &model.Author{
+			ID: fmt.Sprint("author-", i),
+		}
+	}
+	return obj.Books, nil
 }
 
-// Libraries is the resolver for the libraries field.
-func (r *queryResolver) Libraries(ctx context.Context) ([]*model.Library, error) {
-	return []*model.Library{
-		{
-			Address: "library address from libraries resolver",
-		},
+// Library is the resolver for the library field.
+func (r *queryResolver) Library(ctx context.Context, size int) (*model.Library, error) {
+	books := make([]*model.Book, size)
+	for i := range books {
+		books[i] = &model.Book{
+			ID: fmt.Sprint("book-", i),
+		}
+	}
+	return &model.Library{
+		ID:      "lib-id",
+		Address: "lib address",
+		Books:   books,
 	}, nil
 }
 

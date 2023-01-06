@@ -3,10 +3,12 @@
 package model
 
 type Author struct {
+	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
 type Book struct {
+	ID     string  `json:"id"`
 	Title  string  `json:"title"`
 	Author *Author `json:"author"`
 }
@@ -17,6 +19,7 @@ type Fractal struct {
 }
 
 type Library struct {
+	ID      string  `json:"id"`
 	Books   []*Book `json:"books"`
 	Address string  `json:"address"`
 }

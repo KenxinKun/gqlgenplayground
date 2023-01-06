@@ -1,9 +1,12 @@
 query listLibraries {
-    libraries {
+    library(size: 3) {
+        id
         address
         books {
+            id
             title
             author {
+                id
                 name
             }
         }

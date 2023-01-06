@@ -48,11 +48,13 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Author struct {
+		ID   func(childComplexity int) int
 		Name func(childComplexity int) int
 	}
 
 	Book struct {
 		Author func(childComplexity int) int
+		ID     func(childComplexity int) int
 		Title  func(childComplexity int) int
 	}
 
@@ -64,11 +66,12 @@ type ComplexityRoot struct {
 	Library struct {
 		Address func(childComplexity int) int
 		Books   func(childComplexity int) int
+		ID      func(childComplexity int) int
 	}
 
 	Query struct {
-		Fractal   func(childComplexity int) int
-		Libraries func(childComplexity int) int
+		Fractal func(childComplexity int) int
+		Library func(childComplexity int, size int) int
 	}
 }
 
@@ -82,7 +85,7 @@ type LibraryResolver interface {
 	Books(ctx context.Context, obj *model.Library) ([]*model.Book, error)
 }
 type QueryResolver interface {
-	Libraries(ctx context.Context) ([]*model.Library, error)
+	Library(ctx context.Context, size int) (*model.Library, error)
 	Fractal(ctx context.Context) (*model.Fractal, error)
 }
 
@@ -101,6 +104,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
+	case "Author.id":
+		if e.complexity.Author.ID == nil {
+			break
+		}
+
+		return e.complexity.Author.ID(childComplexity), true
+
 	case "Author.name":
 		if e.complexity.Author.Name == nil {
 			break
@@ -114,6 +124,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Book.Author(childComplexity), true
+
+	case "Book.id":
+		if e.complexity.Book.ID == nil {
+			break
+		}
+
+		return e.complexity.Book.ID(childComplexity), true
 
 	case "Book.title":
 		if e.complexity.Book.Title == nil {
@@ -150,6 +167,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Library.Books(childComplexity), true
 
+	case "Library.id":
+		if e.complexity.Library.ID == nil {
+			break
+		}
+
+		return e.complexity.Library.ID(childComplexity), true
+
 	case "Query.fractal":
 		if e.complexity.Query.Fractal == nil {
 			break
@@ -157,12 +181,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Fractal(childComplexity), true
 
-	case "Query.libraries":
-		if e.complexity.Query.Libraries == nil {
+	case "Query.library":
+		if e.complexity.Query.Library == nil {
 			break
 		}
 
-		return e.complexity.Query.Libraries(childComplexity), true
+		args, err := ec.field_Query_library_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Library(childComplexity, args["size"].(int)), true
 
 	}
 	return 0, false
@@ -250,6 +279,21 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_library_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["size"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("size"))
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["size"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field___Type_enumValues_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -288,6 +332,50 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
+func (ec *executionContext) _Author_id(ctx context.Context, field graphql.CollectedField, obj *model.Author) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Author_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Author_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Author",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Author_name(ctx context.Context, field graphql.CollectedField, obj *model.Author) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Author_name(ctx, field)
 	if err != nil {
@@ -322,6 +410,50 @@ func (ec *executionContext) _Author_name(ctx context.Context, field graphql.Coll
 func (ec *executionContext) fieldContext_Author_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Author",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Book_id(ctx context.Context, field graphql.CollectedField, obj *model.Book) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Book_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Book_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Book",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -415,6 +547,8 @@ func (ec *executionContext) fieldContext_Book_author(ctx context.Context, field 
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_Author_id(ctx, field)
 			case "name":
 				return ec.fieldContext_Author_name(ctx, field)
 			}
@@ -518,6 +652,50 @@ func (ec *executionContext) fieldContext_Fractal_fractal(ctx context.Context, fi
 	return fc, nil
 }
 
+func (ec *executionContext) _Library_id(ctx context.Context, field graphql.CollectedField, obj *model.Library) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Library_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Library_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Library",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Library_books(ctx context.Context, field graphql.CollectedField, obj *model.Library) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Library_books(ctx, field)
 	if err != nil {
@@ -557,6 +735,8 @@ func (ec *executionContext) fieldContext_Library_books(ctx context.Context, fiel
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_Book_id(ctx, field)
 			case "title":
 				return ec.fieldContext_Book_title(ctx, field)
 			case "author":
@@ -612,8 +792,8 @@ func (ec *executionContext) fieldContext_Library_address(ctx context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_libraries(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_libraries(ctx, field)
+func (ec *executionContext) _Query_library(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_library(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -626,7 +806,7 @@ func (ec *executionContext) _Query_libraries(ctx context.Context, field graphql.
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Libraries(rctx)
+		return ec.resolvers.Query().Library(rctx, fc.Args["size"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -638,12 +818,12 @@ func (ec *executionContext) _Query_libraries(ctx context.Context, field graphql.
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Library)
+	res := resTmp.(*model.Library)
 	fc.Result = res
-	return ec.marshalNLibrary2ᚕᚖgithubᚗcomᚋKenxinKunᚋgqlgenplaygroundᚋgraphᚋmodelᚐLibraryᚄ(ctx, field.Selections, res)
+	return ec.marshalNLibrary2ᚖgithubᚗcomᚋKenxinKunᚋgqlgenplaygroundᚋgraphᚋmodelᚐLibrary(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_libraries(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_library(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -651,6 +831,8 @@ func (ec *executionContext) fieldContext_Query_libraries(ctx context.Context, fi
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_Library_id(ctx, field)
 			case "books":
 				return ec.fieldContext_Library_books(ctx, field)
 			case "address":
@@ -658,6 +840,17 @@ func (ec *executionContext) fieldContext_Query_libraries(ctx context.Context, fi
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Library", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_library_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
 	}
 	return fc, nil
 }
@@ -2632,6 +2825,13 @@ func (ec *executionContext) _Author(ctx context.Context, sel ast.SelectionSet, o
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Author")
+		case "id":
+
+			out.Values[i] = ec._Author_id(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "name":
 
 			out.Values[i] = ec._Author_name(ctx, field, obj)
@@ -2660,6 +2860,13 @@ func (ec *executionContext) _Book(ctx context.Context, sel ast.SelectionSet, obj
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Book")
+		case "id":
+
+			out.Values[i] = ec._Book_id(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "title":
 
 			out.Values[i] = ec._Book_title(ctx, field, obj)
@@ -2756,6 +2963,13 @@ func (ec *executionContext) _Library(ctx context.Context, sel ast.SelectionSet, 
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Library")
+		case "id":
+
+			out.Values[i] = ec._Library_id(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "books":
 			field := field
 
@@ -2813,7 +3027,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
-		case "libraries":
+		case "library":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -2822,7 +3036,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_libraries(ctx, field)
+				res = ec._Query_library(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -3312,48 +3526,8 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 	return res
 }
 
-func (ec *executionContext) marshalNLibrary2ᚕᚖgithubᚗcomᚋKenxinKunᚋgqlgenplaygroundᚋgraphᚋmodelᚐLibraryᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Library) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNLibrary2ᚖgithubᚗcomᚋKenxinKunᚋgqlgenplaygroundᚋgraphᚋmodelᚐLibrary(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
+func (ec *executionContext) marshalNLibrary2githubᚗcomᚋKenxinKunᚋgqlgenplaygroundᚋgraphᚋmodelᚐLibrary(ctx context.Context, sel ast.SelectionSet, v model.Library) graphql.Marshaler {
+	return ec._Library(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNLibrary2ᚖgithubᚗcomᚋKenxinKunᚋgqlgenplaygroundᚋgraphᚋmodelᚐLibrary(ctx context.Context, sel ast.SelectionSet, v *model.Library) graphql.Marshaler {
